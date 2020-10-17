@@ -1,0 +1,22 @@
+name: build
+on:
+  push:
+    branches: [master]
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    container: rust:1.47-slim-buster
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Lint
+        run: rustup component add rustfmt && cargo fmt -- --check
+
+      - name: Build
+        run: cargo build
+
+      - name: Test
+        run: cargo test

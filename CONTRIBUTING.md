@@ -5,10 +5,15 @@ This repository follows the [Github Flow](https://githubflow.github.io): feature
 ## Continuous integration
 
 Each time a branch other than `master` is pushed, the following happens in Github Actions:
+
+- The source code formatting is checked.
+- The crate is built.
 - The tests are run.
 
 Each time the `master` branch is pushed, the following happens in Github Actions:
 
+- The source code formatting is checked.
+- The crate is built.
 - The tests are run.
 - A new version of the crate is published to crates.io.
 - A Github Release is created with tag according to the version number.
