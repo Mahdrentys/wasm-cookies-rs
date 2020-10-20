@@ -242,6 +242,14 @@ pub fn set(name: &str, value: &str, options: &CookieOptions) -> String {
     )
 }
 
+pub fn delete_raw(name: &str) -> String {
+    format!("{}=;expires=Thu, 01 Jan 1970 00:00:00 GMT", name)
+}
+
+pub fn delete(name: &str) -> String {
+    delete_raw(&urlencoding::encode(name))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

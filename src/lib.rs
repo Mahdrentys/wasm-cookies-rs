@@ -57,3 +57,13 @@ pub fn set_raw(name: &str, value: &str, options: &CookieOptions) {
 pub fn set(name: &str, value: &str, options: &CookieOptions) {
     set_cookie_string(&cookies::set(name, value, options));
 }
+
+/// Delete a cookie without encoding its name.
+pub fn delete_raw(name: &str) {
+    set_cookie_string(&cookies::delete_raw(name));
+}
+
+/// Delete a cookie, URI encoding its name.
+pub fn delete(name: &str) {
+    set_cookie_string(&cookies::delete(name));
+}
