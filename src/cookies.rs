@@ -17,22 +17,26 @@ pub enum AllDecodeError {
     Value(String, FromUrlEncodingError),
 }
 
+fn process_key_value_str(key_value_str: &str) -> Result<(&str, &str), ()> {
+    let mut key_value_iter = key_value_str.split('=');
+
+    match key_value_iter.next() {
+        Some(key) => match key_value_iter.next() {
+            Some(value) => Ok((key.trim(), value.trim())),
+            None => Err(()),
+        },
+
+        None => Err(()),
+    }
+}
+
 pub fn all_raw(cookie_string: &str) -> HashMap<String, String> {
     cookie_string
         .split(';')
-        .filter_map(|key_value| {
-            let mut key_value_iter = key_value.split('=');
-
-            match key_value_iter.next() {
-                Some(key) => match key_value_iter.next() {
-                    Some(value) => Some((key, value)),
-                    None => None,
-                },
-
-                None => None,
-            }
+        .filter_map(|key_value_str| match process_key_value_str(key_value_str) {
+            Ok((key, value)) => Some((key.to_owned(), value.to_owned())),
+            Err(_) => None,
         })
-        .map(|(key, value)| (key.trim().to_owned(), value.trim().to_owned()))
         .collect()
 }
 
@@ -48,6 +52,40 @@ pub fn all(cookie_string: &str) -> Result<HashMap<String, String>, AllDecodeErro
             Err(error) => Err(AllDecodeError::Key(key, error)),
         })
         .collect()
+}
+
+pub fn get_raw(cookie_string: &str, name: &str) -> Option<String> {
+    cookie_string
+        .split(';')
+        .find_map(|key_value_str| match process_key_value_str(key_value_str) {
+            Ok((key, value)) => {
+                if key == name {
+                    Some(value.to_owned())
+                } else {
+                    None
+                }
+            }
+
+            Err(_) => None,
+        })
+}
+
+pub fn get(cookie_string: &str, name: &str) -> Option<Result<String, FromUrlEncodingError>> {
+    let name = urlencoding::encode(name);
+
+    cookie_string
+        .split(';')
+        .find_map(|key_value_str| match process_key_value_str(key_value_str) {
+            Ok((key, value)) => {
+                if key == name {
+                    Some(urlencoding::decode(value))
+                } else {
+                    None
+                }
+            }
+
+            Err(_) => None,
+        })
 }
 
 #[cfg(test)]
@@ -92,5 +130,32 @@ mod tests {
             AllDecodeError::Value(key, _) => assert_eq!(key, "key 2"),
             _ => panic!(),
         }
+    }
+
+    #[test]
+    fn test_get_raw() {
+        assert_eq!(
+            get_raw("key1=value1 ; key2= value2;key3=value3", "key2"),
+            Some("value2".to_owned())
+        );
+
+        assert_eq!(
+            get_raw("key1=value1 ; key2= value2;key3=value3", "key4"),
+            None
+        );
+    }
+
+    #[test]
+    fn test_get() {
+        assert_eq!(
+            get("key1=value1 ; key%202= value%202;key3=value3", "key 2")
+                .map(|result| result.unwrap()),
+            Some("value 2".to_owned())
+        );
+
+        assert!(get("key1=value1 ; key2= value2;key3=value3", "key4").is_none());
+        assert!(get("key1=value1 ; key2= value2%AA;key3=value3", "key2")
+            .unwrap()
+            .is_err());
     }
 }

@@ -34,3 +34,13 @@ pub fn all_raw() -> HashMap<String, String> {
 pub fn all() -> Result<HashMap<String, String>, AllDecodeError> {
     cookies::all(&cookie_string())
 }
+
+/// Returns undecoded cookie if it exists.
+pub fn get_raw(name: &str) -> Option<String> {
+    cookies::get_raw(&cookie_string(), name)
+}
+
+/// If it exists, returns cookie or an error if value URI decoding fails.
+pub fn get(name: &str) -> Option<Result<String, FromUrlEncodingError>> {
+    cookies::get(&cookie_string(), name)
+}
