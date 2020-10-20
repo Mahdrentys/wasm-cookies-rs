@@ -8,7 +8,6 @@ repository = "https://github.com/mahdrentys/wasm-cookies-rs"
 license = "MIT"
 keywords = ["cookies", "cookie", "wasm", "browser", "client"]
 categories = ["wasm", "web-programming"]
-publish = false
 
 [dependencies]
 wasm-bindgen = "0.2"
