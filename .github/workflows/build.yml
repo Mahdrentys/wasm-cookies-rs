@@ -20,3 +20,30 @@ jobs:
 
       - name: Test
         run: cargo test
+      
+      - name: Download TOML parser
+        run: |
+          apt-get update && apt-get -y install wget &&
+          wget https://github.com/freshautomations/stoml/releases/download/v0.4.0/stoml_linux_amd64 &&
+          mv stoml_linux_amd64 ~/stoml &&
+          chmod +x ~/stoml
+
+      - name: Get version number
+        id: get_version_number
+        run: echo "::set-output name=version::$(~/stoml ./Cargo.toml package.version)"
+
+      - name: Create release
+        uses: actions/create-release@v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.get_version_number.outputs.version }}
+          release_name: Release ${{ steps.get_version_number.outputs.version }}
+          draft: false
+          prerelease: false
+      
+      - name: Login on crates.io
+        run: cargo login ${{ secrets.CRATES_IO_TOKEN }}
+
+      - name: Publish on crates.io
+        run: cargo publish
