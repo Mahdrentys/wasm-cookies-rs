@@ -30,26 +30,30 @@ fn process_key_value_str(key_value_str: &str) -> Result<(&str, &str), ()> {
     }
 }
 
-pub fn all_raw(cookie_string: &str) -> HashMap<String, String> {
-    cookie_string
-        .split(';')
-        .filter_map(|key_value_str| match process_key_value_str(key_value_str) {
-            Ok((key, value)) => Some((key.to_owned(), value.to_owned())),
+fn all_iter(cookie_string: &str) -> impl Iterator<Item = (&str, &str)> {
+    cookie_string.split(';').filter_map(|key_value_str| {
+        match process_key_value_str(key_value_str) {
+            Ok((key, value)) => Some((key, value)),
             Err(_) => None,
-        })
+        }
+    })
+}
+
+pub fn all_raw(cookie_string: &str) -> HashMap<String, String> {
+    all_iter(cookie_string)
+        .map(|(key, value)| (key.to_owned(), value.to_owned()))
         .collect()
 }
 
 pub fn all(cookie_string: &str) -> Result<HashMap<String, String>, AllDecodeError> {
-    all_raw(cookie_string)
-        .into_iter()
-        .map(|(key, value)| match urlencoding::decode(&key) {
-            Ok(key) => match urlencoding::decode(&value) {
+    all_iter(cookie_string)
+        .map(|(key, value)| match urlencoding::decode(key) {
+            Ok(key) => match urlencoding::decode(value) {
                 Ok(value) => Ok((key.into(), value.into())),
                 Err(error) => Err(AllDecodeError::Value(key.into(), error)),
             },
 
-            Err(error) => Err(AllDecodeError::Key(key, error)),
+            Err(error) => Err(AllDecodeError::Key(key.to_owned(), error)),
         })
         .collect()
 }
