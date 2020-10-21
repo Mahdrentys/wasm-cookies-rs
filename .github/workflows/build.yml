@@ -33,6 +33,8 @@ jobs:
         run: echo "::set-output name=version::$(~/stoml ./Cargo.toml package.version)"
 
       - name: Create release
+        id: create_release
+        continue-on-error: true
         uses: actions/create-release@v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -43,7 +45,9 @@ jobs:
           prerelease: false
       
       - name: Login on crates.io
+        if: steps.create_release.outcome == 'success'
         run: cargo login ${{ secrets.CRATES_IO_TOKEN }}
 
       - name: Publish on crates.io
+        if: steps.create_release.outcome == 'success'
         run: cargo publish
