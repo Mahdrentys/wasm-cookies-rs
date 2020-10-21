@@ -15,8 +15,8 @@ Each time the `master` branch is pushed, the following happens in Github Actions
 - The source code formatting is checked.
 - The crate is built.
 - The tests are run.
-- A new version of the crate is published to crates.io.
-- A Github Release is created with tag according to the version number.
+- If the version number was updated, a Github Release is created with tag according to the version number.
+- If the version number was updated, a new version of the crate is published to crates.io.
 
 ## Commit messages
 
@@ -26,7 +26,7 @@ Commit messages must be written in imperative tense, with a first capital letter
 
 Branch names must be written in lowercase, with dash separated words. For a bug fix branch, the branch name must prefixed by "fix/".
 
-Before submitting your pull request, you must update the version number in `Cargo.toml`, in a commit whose message is "Update version number". The version number follows semantic versionning: if it's a new feature, you must increment the minor number and reset the patch number to 0, and if it's a bug fix, you must increment the patch number.
+Before submitting your pull request, you must update the version number in `Cargo.toml`, in a commit whose message is "Update version number". The version number follows semantic versionning: if it's a new feature, you must increment the minor number and reset the patch number to 0, and if it's a bug fix, you must increment the patch number. If your pull request only makes changes on things that are not directly related to the crate (for example if you edit the Github Actions workflows), don't update the version number.
 
 If the master branch is ahead of your branch, you must merge it into your branch to resolve conflicts. You might have to update the version number again if it has been upgraded since you did it.
 
