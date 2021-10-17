@@ -33,7 +33,7 @@ fn process_key_value_str(key_value_str: &str) -> Result<(&str, &str), ()> {
     }
 }
 
-fn all_iter(cookie_string: &str) -> impl Iterator<Item = (&str, &str)> {
+pub fn all_iter(cookie_string: &str) -> impl Iterator<Item = (&str, &str)> {
     cookie_string.split(';').filter_map(|key_value_str| {
         match process_key_value_str(key_value_str) {
             Ok((key, value)) => Some((key, value)),

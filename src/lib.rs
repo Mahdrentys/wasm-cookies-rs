@@ -1,4 +1,5 @@
-mod cookies;
+pub mod cookies;
+
 pub use cookies::{AllDecodeError, CookieOptions, SameSite};
 pub use urlencoding::FromUrlEncodingError;
 
