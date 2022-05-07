@@ -3,14 +3,19 @@ name = "wasm-cookies"
 version = "0.1.0"
 authors = ["Mahdrentys <mahdrentys@gmail.com>"]
 edition = "2018"
-description = "Allows to manage cookies in the browser with Rust and WebAssembly."
+description = "Allows to manage cookies in and outside of the browser with Rust and WebAssembly."
 repository = "https://github.com/mahdrentys/wasm-cookies-rs"
 license = "MIT"
 keywords = ["cookies", "cookie", "wasm", "browser", "client"]
 categories = ["wasm", "web-programming"]
 
 [dependencies]
+urlencoding = "1.1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2"
 web-sys = { version = "0.3", features = ["Window", "HtmlDocument"] }
-urlencoding = "1.1"
 js-sys = "0.3"
+
+[package.metadata.docs.rs]
+default-target = "wasm32-unknown-unknown"

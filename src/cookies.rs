@@ -1,3 +1,9 @@
+//! This module provides the same functions as the root module, but which don't operate
+//! directly on the browser's cookie string, so it can be used outside a browser.
+//!
+//! Instead of reading the browser's cookie string, functions in this module take it as an
+//! argument. Instead of writing to the browser's cookie string, they return it.
+
 use js_sys::Date;
 use std::collections::HashMap;
 use std::time::Duration;
@@ -33,7 +39,8 @@ fn process_key_value_str(key_value_str: &str) -> Result<(&str, &str), ()> {
     }
 }
 
-pub fn all_iter(cookie_string: &str) -> impl Iterator<Item = (&str, &str)> {
+/// Returns all cookies as key-value pairs, with undecoded keys and values.
+pub fn all_iter_raw(cookie_string: &str) -> impl Iterator<Item = (&str, &str)> {
     cookie_string.split(';').filter_map(|key_value_str| {
         match process_key_value_str(key_value_str) {
             Ok((key, value)) => Some((key, value)),
@@ -42,25 +49,37 @@ pub fn all_iter(cookie_string: &str) -> impl Iterator<Item = (&str, &str)> {
     })
 }
 
+/// Returns all cookies as key-value pairs, with URI decoded keys and values
+/// (with the [urlencoding crate](https://crates.io/crates/urlencoding)),
+/// or an error if URI decoding fails on a key or a value.
+pub fn all_iter(
+    cookie_string: &str,
+) -> impl Iterator<Item = Result<(String, String), AllDecodeError>> + '_ {
+    all_iter_raw(cookie_string).map(|(key, value)| match urlencoding::decode(key) {
+        Ok(key) => match urlencoding::decode(value) {
+            Ok(value) => Ok((key, value)),
+            Err(error) => Err(AllDecodeError::Value(key, error)),
+        },
+
+        Err(error) => Err(AllDecodeError::Key(key.to_owned(), error)),
+    })
+}
+
+/// Returns all cookies, with undecoded keys and values.
 pub fn all_raw(cookie_string: &str) -> HashMap<String, String> {
-    all_iter(cookie_string)
+    all_iter_raw(cookie_string)
         .map(|(key, value)| (key.to_owned(), value.to_owned()))
         .collect()
 }
 
+/// Returns all cookies, with URI decoded keys and values
+/// (with the [urlencoding crate](https://crates.io/crates/urlencoding)),
+/// or an error if URI decoding fails on a key or a value.
 pub fn all(cookie_string: &str) -> Result<HashMap<String, String>, AllDecodeError> {
-    all_iter(cookie_string)
-        .map(|(key, value)| match urlencoding::decode(key) {
-            Ok(key) => match urlencoding::decode(value) {
-                Ok(value) => Ok((key.into(), value.into())),
-                Err(error) => Err(AllDecodeError::Value(key.into(), error)),
-            },
-
-            Err(error) => Err(AllDecodeError::Key(key.to_owned(), error)),
-        })
-        .collect()
+    all_iter(cookie_string).collect()
 }
 
+/// Returns undecoded cookie if it exists.
 pub fn get_raw(cookie_string: &str, name: &str) -> Option<String> {
     cookie_string
         .split(';')
@@ -77,6 +96,9 @@ pub fn get_raw(cookie_string: &str, name: &str) -> Option<String> {
         })
 }
 
+/// If it exists, returns URI decoded cookie
+/// (with the [urlencoding crate](https://crates.io/crates/urlencoding))
+/// or an error if the value's URI decoding fails.
 pub fn get(cookie_string: &str, name: &str) -> Option<Result<String, FromUrlEncodingError>> {
     let name = urlencoding::encode(name);
 
@@ -204,6 +226,7 @@ impl SameSite {
     }
 }
 
+/// Return the cookie string that sets a cookie, with non encoded name and value.
 pub fn set_raw(name: &str, value: &str, options: &CookieOptions) -> String {
     let mut cookie_string = name.to_owned();
     cookie_string.push('=');
@@ -234,6 +257,8 @@ pub fn set_raw(name: &str, value: &str, options: &CookieOptions) -> String {
     cookie_string
 }
 
+/// Return the cookie string that sets a cookie, with URI encoded name and value
+/// (with the [urlencoding crate](https://crates.io/crates/urlencoding)).
 pub fn set(name: &str, value: &str, options: &CookieOptions) -> String {
     set_raw(
         &urlencoding::encode(name),
@@ -242,10 +267,12 @@ pub fn set(name: &str, value: &str, options: &CookieOptions) -> String {
     )
 }
 
+/// Return the cookie string that deletes a cookie without encoding its name.
 pub fn delete_raw(name: &str) -> String {
     format!("{}=;expires=Thu, 01 Jan 1970 00:00:00 GMT", name)
 }
 
+/// Return the cookie string that deletes a cookie, URI encoding its name.
 pub fn delete(name: &str) -> String {
     delete_raw(&urlencoding::encode(name))
 }
