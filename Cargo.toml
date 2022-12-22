@@ -17,5 +17,8 @@ wasm-bindgen = "0.2"
 web-sys = { version = "0.3", features = ["Window", "HtmlDocument"] }
 js-sys = "0.3"
 
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+chrono = "0.4.23"
+
 [package.metadata.docs.rs]
 default-target = "wasm32-unknown-unknown"

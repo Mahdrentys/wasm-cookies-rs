@@ -4,10 +4,17 @@
 //! Instead of reading the browser's cookie string, functions in this module take it as an
 //! argument. Instead of writing to the browser's cookie string, they return it.
 
+#[cfg(not(target_arch = "wasm32"))]
+use chrono::offset::Utc;
+#[cfg(not(target_arch = "wasm32"))]
+use chrono::NaiveDateTime;
+#[cfg(target_arch = "wasm32")]
 use js_sys::Date;
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::time::Duration;
 use urlencoding::FromUrlEncodingError;
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::JsValue;
 
 /// URI decoding error on a key or a value, when calling `wasm_cookie::all`.
@@ -130,7 +137,7 @@ pub struct CookieOptions<'a> {
 
     /// Expiration date in GMT string format.
     /// If `None`, the cookie will expire at the end of session.
-    pub expires: Option<String>,
+    pub expires: Option<Cow<'a, str>>,
 
     /// If true, the cookie will only be transmitted over secure protocol as HTTPS.
     /// The default value is false.
@@ -157,22 +164,41 @@ impl<'a> CookieOptions<'a> {
     }
 
     /// Expires the cookie at a specific date.
+    ///
+    /// `date` must be a GMT string (see <https://developer.mozilla.org/fr/docs/Web/JavaScript/Reference/Global_Objects/Date/toUTCString>).
+    ///
     /// The default behavior of the cookie is to expire at the end of session.
-    pub fn expires_at_date(mut self, date: &Date) -> Self {
-        self.expires = Some(date.to_utc_string().into());
+    pub fn expires_at_date(mut self, date: &'a str) -> Self {
+        self.expires = Some(Cow::Borrowed(date));
         self
     }
 
-    /// Expires the cookie at a specific timestamp (in seconds).
+    /// Expires the cookie at a specific timestamp (in milliseconds, UTC, with leap seconds ignored).
     /// The default behavior of the cookie is to expire at the end of session.
-    pub fn expires_at_timestamp(self, timestamp: u64) -> Self {
-        self.expires_at_date(&Date::new(&JsValue::from_f64(timestamp as f64 * 1000.0)))
+    pub fn expires_at_timestamp(mut self, timestamp: i64) -> Self {
+        #[cfg(target_arch = "wasm32")]
+        let date: String = Date::new(&JsValue::from_f64(timestamp as f64))
+            .to_utc_string()
+            .into();
+
+        #[cfg(not(target_arch = "wasm32"))]
+        let date = NaiveDateTime::from_timestamp_millis(timestamp)
+            .unwrap()
+            .format("%a, %d %b %Y %T GMT")
+            .to_string();
+
+        self.expires = Some(Cow::Owned(date));
+        self
     }
 
     /// Expires the cookie after a certain duration.
     /// The default behavior of the cookie is to expire at the end of session.
     pub fn expires_after(self, duration: Duration) -> Self {
-        self.expires_at_timestamp((Date::now() / 1000.0 + duration.as_secs_f64()) as u64)
+        #[cfg(target_arch = "wasm32")]
+        let now = Date::now() as i64;
+        #[cfg(not(target_arch = "wasm32"))]
+        let now = Utc::now().timestamp_millis();
+        self.expires_at_timestamp(now + duration.as_millis() as i64)
     }
 
     /// Set the cookie to be only transmitted over secure protocol as HTTPS.
@@ -381,6 +407,15 @@ mod tests {
                     .secure()
             ),
             "key=value;path=/path;domain=example.com;secure;samesite=lax"
+        );
+
+        assert_eq!(
+            set_raw(
+                "key",
+                "value",
+                &CookieOptions::default().expires_at_timestamp(1100000000000),
+            ),
+            "key=value;expires=Tue, 09 Nov 2004 11:33:20 GMT;samesite=lax",
         );
     }
 }
