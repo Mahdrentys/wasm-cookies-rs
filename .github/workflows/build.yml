@@ -19,7 +19,7 @@ jobs:
         run: cargo build
 
       - name: Test
-        run: cargo test && cargo test --target wasm32-unknown-unknown
+        run: cargo test
       
       - name: Download TOML parser
         run: |
