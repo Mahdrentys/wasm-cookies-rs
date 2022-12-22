@@ -1,6 +1,6 @@
 [package]
 name = "wasm-cookies"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Mahdrentys <mahdrentys@gmail.com>"]
 edition = "2018"
 description = "Allows to manage cookies in and outside of the browser with Rust and WebAssembly."
