@@ -5,16 +5,19 @@ jobs:
   test:
     name: test
     runs-on: ubuntu-latest
-    container: rust:1.47-slim-buster
+    container: rust:1-slim-buster
     steps:
       - name: Checkout
         uses: actions/checkout@v1
 
       - name: Lint
         run: rustup component add rustfmt && cargo fmt -- --check
+      
+      - name: Add wasm target
+        run: rustup target add wasm32-unknown-unknown
 
-      - name: Build
-        run: cargo build
+      - name: Check
+        run: cargo check && cargo check --target wasm32-unknown-unknown
 
       - name: Test
         run: cargo test
