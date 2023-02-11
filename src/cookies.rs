@@ -34,14 +34,8 @@ pub enum AllDecodeError {
 }
 
 fn process_key_value_str(key_value_str: &str) -> Result<(&str, &str), ()> {
-    let mut key_value_iter = key_value_str.split('=');
-
-    match key_value_iter.next() {
-        Some(key) => match key_value_iter.next() {
-            Some(value) => Ok((key.trim(), value.trim())),
-            None => Err(()),
-        },
-
+    match key_value_str.split_once('=') {
+        Some((key, value)) => Ok((key.trim(), value.trim())),
         None => Err(()),
     }
 }
@@ -363,9 +357,9 @@ mod tests {
     #[test]
     fn test_get() {
         assert_eq!(
-            get("key1=value1 ; key%202= value%202;key3=value3", "key 2")
+            get("key1=value1 ; key%202= value%202=;key3=value3", "key 2")
                 .map(|result| result.unwrap()),
-            Some("value 2".to_owned())
+            Some("value 2=".to_owned())
         );
 
         assert!(get("key1=value1 ; key2= value2;key3=value3", "key4").is_none());
