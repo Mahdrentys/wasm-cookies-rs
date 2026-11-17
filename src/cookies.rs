@@ -5,9 +5,9 @@
 //! argument. Instead of writing to the browser's cookie string, they return it.
 
 #[cfg(not(target_arch = "wasm32"))]
-use chrono::offset::Utc;
+use jiff::Timestamp;
 #[cfg(not(target_arch = "wasm32"))]
-use chrono::NaiveDateTime;
+use jiff::ZonedDateTime;
 #[cfg(target_arch = "wasm32")]
 use js_sys::Date;
 use std::borrow::Cow;
@@ -176,9 +176,9 @@ impl<'a> CookieOptions<'a> {
             .into();
 
         #[cfg(not(target_arch = "wasm32"))]
-        let date = NaiveDateTime::from_timestamp_millis(timestamp)
+        let date = Timestamp::from_millisecond(timestamp)
             .unwrap()
-            .format("%a, %d %b %Y %T GMT")
+            .strftime("%a, %d %b %Y %T GMT")
             .to_string();
 
         self.expires = Some(Cow::Owned(date));
@@ -191,7 +191,7 @@ impl<'a> CookieOptions<'a> {
         #[cfg(target_arch = "wasm32")]
         let now = Date::now() as i64;
         #[cfg(not(target_arch = "wasm32"))]
-        let now = Utc::now().timestamp_millis();
+        let now = ZonedDateTime::now().timestamp().as_millisecond();
         self.expires_at_timestamp(now + duration.as_millis() as i64)
     }
 
